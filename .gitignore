@@ -94,8 +94,8 @@ ENV/
 # Rope project settings
 .ropeproject
 
-viera.yaml
-viera.jsonld
+relay.yaml
+relay.jsonld
 
 # config file
 relay.yaml
