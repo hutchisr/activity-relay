@@ -36,8 +36,6 @@ nodeinfo_template = {
 
 
 def get_peers():
-    global DATABASE
-
     return [urllib.parse.urlsplit(inbox).hostname for inbox in DATABASE.get('relay-list', [])]
 
 
