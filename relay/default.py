@@ -7,16 +7,6 @@ host = CONFIG['ap']['host']
 note = CONFIG['note']
 
 inboxes = DATABASE.get('relay-list', [])
-<<<<<<< HEAD
-=======
-# targets = '\n'.join(['<li>{}</li>'.format(urllib.parse.urlsplit(target).hostname) for target in inboxes])
-def get_targets():
-    targets = ''
-    for target in inboxes:
-        parsed = urlsplit(target)
-        targets += '<li><a href="{}://{}">{}</a></li>'.format(parsed.scheme, parsed.netloc, parsed.hostname)
-    return targets
->>>>>>> Change presentation
 
 async def default(request):
     targets = ''
@@ -50,6 +40,6 @@ async def default(request):
 </section>
 </body></html>
 
-""".format(host=host, note=note,targets=get_targets(),count=len(inboxes)))
+""".format(host=host, note=note, targets=targets, count=len(inboxes)))
 
 app.router.add_get('/', default)
