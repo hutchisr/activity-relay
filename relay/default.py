@@ -39,7 +39,7 @@ async def default(request):
 <p>To host your own relay, you may download the code at this address: <a href="https://git.pleroma.social/pleroma/relay">https://git.pleroma.social/pleroma/relay</a></p>
 <h4>Disclaimer</h4>
 <p>The servers below are not endorsed by the owners of this relay nor are they actively monitored.</p>
-<p>To report abuse please contact <a href="https://social.homunyan.com/@animeirl">@animeirl</a></p>
+<p>To report abuse please contact <a href="https://akko.anemoneya.me/anemone" rel="me">@anemone</a></p>
 <h4>Donations</h4>
 <p>This server costs time and money to maintain. Donations are accepted.</p>
 <ul>

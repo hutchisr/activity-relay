@@ -136,12 +136,12 @@ async def http_signatures_middleware(app, handler):
         if 'signature' in request.headers and request.method == 'POST':
             data = await request.json()
             if 'actor' not in data:
-                raise aiohttp.web.HTTPUnauthorized(body='signature check failed, no actor in message')
+                raise aiohttp.web.HTTPUnauthorized(text='signature check failed, no actor in message')
 
             actor = data["actor"]
             if not (await validate(actor, request)):
-                logging.info('Signature validation failed for: %r', actor)
-                raise aiohttp.web.HTTPUnauthorized(body='signature check failed, signature did not match key')
+                logging.warning('Signature validation failed for: %r', actor)
+                raise aiohttp.web.HTTPUnauthorized(text='signature check failed, signature did not match key')
 
             return (await handler(request))
 

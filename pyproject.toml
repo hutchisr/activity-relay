@@ -2,10 +2,10 @@
 name = "relay"
 version = "0.1.0"
 description = ""
-authors = ["Your Name <you@example.com>"]
+authors = ["Anemoneya <anemoneya@icloud.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.6"
+python = "^3.7"
 aiohttp = "^3.3.2"
 async-timeout = "^3.0.0"
 attrs = "^18.1.0"
@@ -14,12 +14,12 @@ idna = "^2.7"
 idna-ssl = "^1.1.0"
 multidict = "^4.3.1"
 pycryptodome = "^3.9.4"
-PyYAML = "^3.13"
 simplejson = "^3.16.0"
 yarl = "^1.2.6"
-cachetools = "*"
+cachetools = "^5.2.0"
 async_lru = "^1.0"
 pyyaml = "^6.0"
+click = "^8.1.3"
 
 [tool.poetry.dev-dependencies]
 

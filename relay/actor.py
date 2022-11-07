@@ -128,7 +128,7 @@ async def fetch_nodeinfo(domain):
 
 async def follow_remote_actor(actor_uri):
     actor = await fetch_actor(actor_uri)
-    
+
     if not actor:
         logging.info('failed to fetch actor at: %r', actor_uri)
         return
@@ -322,16 +322,16 @@ async def inbox(request):
         software = await fetch_nodeinfo(instance)
 
         if software and software.lower() in AP_CONFIG['blocked_software']:
-            raise aiohttp.web.HTTPUnauthorized(body='relays have been blocked', content_type='text/plain')
+            raise aiohttp.web.HTTPUnauthorized(text='relays have been blocked')
 
     if 'actor' not in data or not request['validated']:
-        raise aiohttp.web.HTTPUnauthorized(body='access denied', content_type='text/plain')
+        raise aiohttp.web.HTTPUnauthorized(text='access denied')
 
     elif data['type'] != 'Follow' and 'https://{}/inbox'.format(instance) not in DATABASE['relay-list']:
-        raise aiohttp.web.HTTPUnauthorized(body='access denied', content_type='text/plain')
+        raise aiohttp.web.HTTPUnauthorized(text='access denied')
 
     elif AP_CONFIG['whitelist_enabled'] is True and instance not in AP_CONFIG['whitelist']:
-        raise aiohttp.web.HTTPUnauthorized(body='access denied', content_type='text/plain')
+        raise aiohttp.web.HTTPUnauthorized(text='access denied')
 
     actor = await fetch_actor(data["actor"])
     actor_uri = 'https://{}/actor'.format(request.host)
