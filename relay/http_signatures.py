@@ -13,32 +13,29 @@ from async_lru import alru_cache
 from .remote_actor import fetch_actor
 
 
-HASHES = {
-    'sha1': SHA,
-    'sha256': SHA256,
-    'sha512': SHA512
-}
+HASHES = {"sha1": SHA, "sha256": SHA256, "sha512": SHA512}
 
 
 def split_signature(sig):
     default = {"headers": "date"}
 
-    sig = sig.strip().split(',')
+    sig = sig.strip().split(",")
 
     for chunk in sig:
-        k, _, v = chunk.partition('=')
-        v = v.strip('\"')
+        k, _, v = chunk.partition("=")
+        v = v.strip('"')
         default[k] = v
 
-    default['headers'] = default['headers'].split()
+    default["headers"] = default["headers"].split()
     return default
 
 
 def build_signing_string(headers, used_headers):
-    return '\n'.join(map(lambda x: ': '.join([x.lower(), headers[x]]), used_headers))
+    return "\n".join(map(lambda x: ": ".join([x.lower(), headers[x]]), used_headers))
 
 
 SIGSTRING_CACHE = LFUCache(1024)
+
 
 def sign_signing_string(sigstring, key):
     if sigstring in SIGSTRING_CACHE:
@@ -46,11 +43,11 @@ def sign_signing_string(sigstring, key):
 
     pkcs = PKCS1_v1_5.new(key)
     h = SHA256.new()
-    h.update(sigstring.encode('ascii'))
+    h.update(sigstring.encode("ascii"))
     sigdata = pkcs.sign(h)
 
     sigdata = base64.b64encode(sigdata)
-    SIGSTRING_CACHE[sigstring] = sigdata.decode('ascii')
+    SIGSTRING_CACHE[sigstring] = sigdata.decode("ascii")
 
     return SIGSTRING_CACHE[sigstring]
 
@@ -59,8 +56,8 @@ def generate_body_digest(body):
     bodyhash = SIGSTRING_CACHE.get(body)
 
     if not bodyhash:
-        h = SHA256.new(body.encode('utf-8'))
-        bodyhash = base64.b64encode(h.digest()).decode('utf-8')
+        h = SHA256.new(body.encode("utf-8"))
+        bodyhash = base64.b64encode(h.digest()).decode("utf-8")
         SIGSTRING_CACHE[body] = bodyhash
 
     return bodyhash
@@ -70,15 +67,15 @@ def sign_headers(headers, key, key_id):
     headers = {x.lower(): y for x, y in headers.items()}
     used_headers = headers.keys()
     sig = {
-        'keyId': key_id,
-        'algorithm': 'rsa-sha256',
-        'headers': ' '.join(used_headers)
+        "keyId": key_id,
+        "algorithm": "rsa-sha256",
+        "headers": " ".join(used_headers),
     }
     sigstring = build_signing_string(headers, used_headers)
-    sig['signature'] = sign_signing_string(sigstring, key)
+    sig["signature"] = sign_signing_string(sigstring, key)
 
     chunks = ['{}="{}"'.format(k, v) for k, v in sig.items()]
-    return ','.join(chunks)
+    return ",".join(chunks)
 
 
 @alru_cache(maxsize=16384)
@@ -88,13 +85,13 @@ async def fetch_actor_key(actor):
     if not actor_data:
         return None
 
-    if 'publicKey' not in actor_data:
+    if "publicKey" not in actor_data:
         return None
 
-    if 'publicKeyPem' not in actor_data['publicKey']:
+    if "publicKeyPem" not in actor_data["publicKey"]:
         return None
 
-    return RSA.importKey(actor_data['publicKey']['publicKeyPem'])
+    return RSA.importKey(actor_data["publicKey"]["publicKeyPem"])
 
 
 async def validate(actor, request):
@@ -102,49 +99,53 @@ async def validate(actor, request):
     if not pubkey:
         return False
 
-    logging.debug('actor key: %r', pubkey)
+    logging.debug("actor key: %r", pubkey)
 
     headers = request.headers.copy()
-    headers['(request-target)'] = ' '.join([request.method.lower(), request.path])
+    headers["(request-target)"] = " ".join([request.method.lower(), request.path])
 
-    sig = split_signature(headers['signature'])
-    logging.debug('sigdata: %r', sig)
+    sig = split_signature(headers["signature"])
+    logging.debug("sigdata: %r", sig)
 
-    sigstring = build_signing_string(headers, sig['headers'])
-    logging.debug('sigstring: %r', sigstring)
+    sigstring = build_signing_string(headers, sig["headers"])
+    logging.debug("sigstring: %r", sigstring)
 
-    sign_alg, _, hash_alg = sig['algorithm'].partition('-')
-    logging.debug('sign alg: %r, hash alg: %r', sign_alg, hash_alg)
+    sign_alg, _, hash_alg = sig["algorithm"].partition("-")
+    logging.debug("sign alg: %r, hash alg: %r", sign_alg, hash_alg)
 
-    sigdata = base64.b64decode(sig['signature'])
+    sigdata = base64.b64decode(sig["signature"])
 
     pkcs = PKCS1_v1_5.new(pubkey)
     h = HASHES[hash_alg].new()
-    h.update(sigstring.encode('ascii'))
+    h.update(sigstring.encode("ascii"))
     result = pkcs.verify(h, sigdata)
 
-    request['validated'] = result
+    request["validated"] = result
 
-    logging.debug('validates? %r', result)
+    logging.debug("validates? %r", result)
     return result
 
 
 async def http_signatures_middleware(app, handler):
     async def http_signatures_handler(request):
-        request['validated'] = False
+        request["validated"] = False
 
-        if 'signature' in request.headers and request.method == 'POST':
+        if "signature" in request.headers and request.method == "POST":
             data = await request.json()
-            if 'actor' not in data:
-                raise aiohttp.web.HTTPUnauthorized(text='signature check failed, no actor in message')
+            if "actor" not in data:
+                raise aiohttp.web.HTTPUnauthorized(
+                    text="signature check failed, no actor in message"
+                )
 
             actor = data["actor"]
             if not (await validate(actor, request)):
-                logging.warning('Signature validation failed for: %r', actor)
-                raise aiohttp.web.HTTPUnauthorized(text='signature check failed, signature did not match key')
+                logging.warning("Signature validation failed for: %r", actor)
+                raise aiohttp.web.HTTPUnauthorized(
+                    text="signature check failed, signature did not match key"
+                )
 
-            return (await handler(request))
+            return await handler(request)
 
-        return (await handler(request))
+        return await handler(request)
 
     return http_signatures_handler

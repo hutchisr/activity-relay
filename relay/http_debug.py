@@ -6,15 +6,15 @@ from collections import defaultdict
 
 
 STATS = {
-    'requests': defaultdict(int),
-    'response_codes': defaultdict(int),
-    'response_codes_per_domain': defaultdict(lambda: defaultdict(int)),
-    'delivery_codes': defaultdict(int),
-    'delivery_codes_per_domain': defaultdict(lambda: defaultdict(int)),
-    'exceptions': defaultdict(int),
-    'exceptions_per_domain': defaultdict(lambda: defaultdict(int)),
-    'delivery_exceptions': defaultdict(int),
-    'delivery_exceptions_per_domain': defaultdict(lambda: defaultdict(int))
+    "requests": defaultdict(int),
+    "response_codes": defaultdict(int),
+    "response_codes_per_domain": defaultdict(lambda: defaultdict(int)),
+    "delivery_codes": defaultdict(int),
+    "delivery_codes_per_domain": defaultdict(lambda: defaultdict(int)),
+    "exceptions": defaultdict(int),
+    "exceptions_per_domain": defaultdict(lambda: defaultdict(int)),
+    "delivery_exceptions": defaultdict(int),
+    "delivery_exceptions_per_domain": defaultdict(lambda: defaultdict(int)),
 }
 
 
@@ -23,7 +23,7 @@ async def on_request_start(session, trace_config_ctx, params):
 
     logging.debug("HTTP START [%r], [%r]", session, params)
 
-    STATS['requests'][params.url.host] += 1
+    STATS["requests"][params.url.host] += 1
 
 
 async def on_request_end(session, trace_config_ctx, params):
@@ -34,12 +34,12 @@ async def on_request_end(session, trace_config_ctx, params):
     host = params.url.host
     status = params.response.status
 
-    STATS['response_codes'][status] += 1
-    STATS['response_codes_per_domain'][host][status] += 1
+    STATS["response_codes"][status] += 1
+    STATS["response_codes_per_domain"][host][status] += 1
 
-    if params.method == 'POST':
-        STATS['delivery_codes'][status] += 1
-        STATS['delivery_codes_per_domain'][host][status] += 1
+    if params.method == "POST":
+        STATS["delivery_codes"][status] += 1
+        STATS["delivery_codes_per_domain"][host][status] += 1
 
 
 async def on_request_exception(session, trace_config_ctx, params):
@@ -50,12 +50,12 @@ async def on_request_exception(session, trace_config_ctx, params):
     host = params.url.host
     exception = repr(params.exception)
 
-    STATS['exceptions'][exception] += 1
-    STATS['exceptions_per_domain'][host][exception] += 1
+    STATS["exceptions"][exception] += 1
+    STATS["exceptions_per_domain"][host][exception] += 1
 
-    if params.method == 'POST':
-        STATS['delivery_exceptions'][exception] += 1
-        STATS['delivery_exceptions_per_domain'][host][exception] += 1
+    if params.method == "POST":
+        STATS["delivery_exceptions"][exception] += 1
+        STATS["delivery_exceptions_per_domain"][host][exception] += 1
 
 
 def http_debug():

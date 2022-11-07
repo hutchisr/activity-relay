@@ -21,11 +21,13 @@ async_lru = "^1.0"
 pyyaml = "^6.0"
 click = "^8.1.3"
 
-[tool.poetry.dev-dependencies]
-
 [tool.poetry.scripts]
 relay = "relay.__main__:main"
 manage = "relay.manage:main"
+
+
+[tool.poetry.group.dev.dependencies]
+black = "^22.10.0"
 
 [build-system]
 requires = ["poetry>=0.12"]

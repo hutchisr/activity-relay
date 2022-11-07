@@ -3,16 +3,19 @@ from urllib.parse import urlsplit
 from . import app, CONFIG
 from .database import DATABASE
 
-host = CONFIG['ap']['host']
-note = CONFIG['note']
+host = CONFIG["ap"]["host"]
+note = CONFIG["note"]
 
-inboxes = DATABASE.get('relay-list', [])
+inboxes = DATABASE.get("relay-list", [])
+
 
 async def default(request):
-    targets = ''
+    targets = ""
     for target in inboxes:
         parsed = urlsplit(target)
-        targets += '<li><a href="{}://{}">{}</a></li>'.format(parsed.scheme, parsed.netloc, parsed.hostname)
+        targets += '<li><a href="{}://{}">{}</a></li>'.format(
+            parsed.scheme, parsed.netloc, parsed.hostname
+        )
     return aiohttp.web.Response(
         status=200,
         content_type="text/html",
@@ -55,6 +58,10 @@ async def default(request):
 </section>
 </body></html>
 
-""".format(host=host, note=note, targets=targets, count=len(inboxes)))
+""".format(
+            host=host, note=note, targets=targets, count=len(inboxes)
+        ),
+    )
 
-app.router.add_get('/', default)
+
+app.router.add_get("/", default)

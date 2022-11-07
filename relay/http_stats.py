@@ -8,4 +8,4 @@ async def stats(request):
     return aiohttp.web.json_response(STATS)
 
 
-app.router.add_get('/stats', stats)
+app.router.add_get("/stats", stats)
