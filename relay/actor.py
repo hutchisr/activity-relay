@@ -12,12 +12,13 @@ from urllib.parse import urlsplit
 from Crypto.PublicKey import RSA
 from cachetools import LFUCache
 
-from . import app, CONFIG
+from . import app, CONFIG, __version__
 from .database import DATABASE
 from .http_debug import http_debug
 from .remote_actor import fetch_actor
 from .http_signatures import sign_headers, generate_body_digest
 
+pause_days = datetime.timedelta(days=CONFIG["pause_days"])
 
 # generate actor keys if not present
 if "actorKeys" not in DATABASE:
@@ -37,6 +38,8 @@ PUBKEY = PRIVKEY.publickey()
 AP_CONFIG = CONFIG["ap"]
 CACHE_SIZE = CONFIG.get("cache-size", 16384)
 CACHE = LFUCache(CACHE_SIZE)
+PAUSE_DAYS = CONFIG.get("pause_days", 7)
+REMOVE_DAYS = CONFIG.get("remove_days", 30)
 
 sem = asyncio.Semaphore(500)
 
@@ -71,6 +74,12 @@ get_actor_inbox = lambda actor: actor.get("endpoints", {}).get(
 
 async def push_message_to_actor(actor, message, our_key_id):
     inbox = get_actor_inbox(actor)
+    if inbox in DATABASE["errors"]:
+        last = datetime.datetime.fromisoformat(DATABASE["errors"][inbox])
+        now = datetime.datetime.utcnow()
+        if (now - last) >= pause_days:
+            logging.warning("Skipped delivery to %s due to excessive delivery failures", inbox)
+            return
     url = urlsplit(inbox)
 
     # XXX: Digest
@@ -79,7 +88,7 @@ async def push_message_to_actor(actor, message, our_key_id):
         "(request-target)": "post {}".format(url.path),
         "Content-Length": str(len(data)),
         "Content-Type": "application/activity+json",
-        "User-Agent": "ActivityRelay",
+        "User-Agent": "ActivityRelay/{}".format(__version__),
         "Host": url.netloc,
         "Digest": "SHA-256={}".format(generate_body_digest(data)),
         "Date": datetime.datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S GMT"),
@@ -90,17 +99,21 @@ async def push_message_to_actor(actor, message, our_key_id):
 
     logging.debug("%r >> %r", inbox, message)
 
-    global sem
     async with sem:
         try:
             async with aiohttp.ClientSession(trace_configs=[http_debug()]) as session:
                 async with session.post(inbox, data=data, headers=headers) as resp:
                     if resp.status == 202:
-                        return
-                    resp_payload = await resp.text()
-                    logging.debug("%r >> resp %r", inbox, resp_payload)
+                        pass
+                    else:
+                        resp_payload = await resp.text()
+                        logging.debug("%r >> resp %r", inbox, resp_payload)
+                    if inbox in DATABASE["errors"]:
+                        DATABASE["errors"].pop(inbox)
         except Exception as e:
             logging.info("Caught %r while pushing to %r.", e, inbox)
+            if inbox not in DATABASE["errors"]:
+                DATABASE["errors"][inbox] = str(datetime.datetime.utcnow())
 
 
 async def fetch_nodeinfo(domain):
@@ -359,9 +372,14 @@ async def inbox(request):
         raise aiohttp.web.HTTPUnauthorized(text="access denied")
 
     actor = await fetch_actor(data["actor"])
-    actor_uri = "https://{}/actor".format(request.host)
+    # actor_uri = "https://{}/actor".format(request.host)
 
     logging.debug(">> payload %r", data)
+
+    inbox = get_actor_inbox(actor)
+    if inbox in DATABASE["errors"]:
+        logging.debug(">> Unpausing %s", inbox)
+        DATABASE["errors"].pop(inbox)
 
     processor = processors.get(data["type"], None)
     if processor:

@@ -11,7 +11,7 @@ AP_CONFIG = CONFIG["ap"]
 
 try:
     with open(CONFIG["db"]) as f:
-        DATABASE = json.load(f)
+        DATABASE: dict = json.load(f)
 
 except FileNotFoundError:
     logging.info("No database was found, making a new one.")
@@ -36,6 +36,9 @@ DATABASE["relay-list"] = following
 
 if "actors" in DATABASE:
     DATABASE.pop("actors")
+
+if "errors" not in DATABASE:
+    DATABASE["errors"] = {}
 
 
 async def database_save():

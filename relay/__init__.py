@@ -6,6 +6,7 @@ import aiohttp
 import aiohttp.web
 import yaml
 
+__version__ = "0.1+anemone"
 
 def load_config():
     with open("relay.yaml") as f:
@@ -22,6 +23,7 @@ def load_config():
             "listen": yaml_file.get("listen", "0.0.0.0"),
             "port": int(yaml_file.get("port", 8080)),
             "note": yaml_file.get("note", "Make a note about your instance here."),
+            "pause_days": yaml_file.get("pause_days", 7),
             "ap": {
                 "blocked_software": [
                     v.lower() for v in yaml_file["ap"].get("blocked_software", [])

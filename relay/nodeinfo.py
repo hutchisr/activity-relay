@@ -3,7 +3,7 @@ import urllib.parse
 
 import aiohttp.web
 
-from . import app
+from . import app, __version__
 from .database import DATABASE
 
 
@@ -20,7 +20,7 @@ nodeinfo_template = {
     "openRegistrations": True,
     "protocols": ["activitypub"],
     "services": {"inbound": [], "outbound": []},
-    "software": {"name": "activityrelay", "version": "0.1 {}".format(commit_label)},
+    "software": {"name": "activityrelay", "version": "{} {}".format(__version__, commit_label)},
     "usage": {"localPosts": 0, "users": {"total": 1}},
     "version": "2.0",
 }
